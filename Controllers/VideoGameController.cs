@@ -1,8 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
-using System.Xml;
 using VideoGameAPI.Controllers.Data;
 
 namespace VideoGameAPI.Controllers
@@ -34,6 +31,12 @@ namespace VideoGameAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<VideoGame>> AddVideoGame(VideoGame newGame)
         {
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             if (newGame is null)
             {
                 return BadRequest();
@@ -59,6 +62,7 @@ namespace VideoGameAPI.Controllers
             game.Title = updateGame.Title;
             game.Platform = updateGame.Platform;
             game.Publisher = updateGame.Publisher;
+            game.Developer = updateGame.Developer;
 
             await _context.SaveChangesAsync();
 
@@ -69,18 +73,26 @@ namespace VideoGameAPI.Controllers
 
         public async Task<IActionResult> DeleteVideoGame(int id)
         {
-            var game = await _context.VideoGames.FindAsync(id);
-
-            if (game is null)
+            try
             {
-                return NotFound();
+                var game = await _context.VideoGames.FindAsync(id);
+
+                if (game is null)
+                {
+                    return NotFound();
+                }
+
+                _context.Remove(game);
+
+                await _context.SaveChangesAsync();
+
+                return NoContent();
             }
-
-            _context.Remove(game);
-
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while deleting the game");
+            }
         }
     }
 }
